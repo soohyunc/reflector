@@ -465,8 +465,8 @@ add_hosts(struct queue_s *channels, char *hosts)
                                 cp = (channel_t*)get_item_no(channels,i,Q_KEEP);
                                 addr = (unsigned int*)malloc(sizeof(unsigned int));
                                 memcpy(addr, he->h_addr_list[0], 4);
-                                
-                                if (IN_MULTICAST(ntohl(*addr))) {
+                                *addr = ntohl(*addr);
+                                if (IN_MULTICAST(*addr)) {
                                         add_multicast(cp->s, *addr);
                                 }
 
