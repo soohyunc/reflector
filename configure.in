@@ -4,7 +4,6 @@ AC_INIT(reflector.c)
 AC_CANONICAL_SYSTEM
 
 AC_PROG_CC
-AC_PROG_CXX
 
 AC_CHECK_LIB(socket, main)
 AC_CHECK_LIB(nsl,    main)

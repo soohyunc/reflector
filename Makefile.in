@@ -27,6 +27,6 @@ ui.c: tcl2c ui.tcl
 tcl2c:  tcl2c.c
 	$(CC) -o $@ tcl2c.c
 
-CLEAN = *.o reflector tcl2c ui.c config.log config.cache core reflector.core
 clean:
-	rm -rf $(CLEAN)
+	rm -rf *.o reflector tcl2c ui.c config.log config.cache core reflector.core
+
