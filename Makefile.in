@@ -22,7 +22,7 @@ ui.o: ui.c
 	$(CC) $(CFLAGS) -c $(INCLUDE) ui.c
 
 ui.c: tcl2c ui.tcl
-	tcl2c tclscript < ui.tcl > ui.c
+	./tcl2c tclscript < ui.tcl > ui.c
 
 tcl2c:  tcl2c.c
 	$(CC) -o $@ tcl2c.c
