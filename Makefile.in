@@ -1,5 +1,5 @@
 CC = @CC@
-CFLAGS = @CFLAGS@ @X_CFLAGS@
+CFLAGS = @CFLAGS@ @X_CFLAGS@ -Wall -W -Werror
 INCLUDE = @TCL_INC@ @TK_INC@ 
 LIB = @X_PRE_LIBS@ @LIBS@ @TK_LIB@ @TCL_LIB@ @X_LIBS@ -lX11 -lXext @X_EXTRA_LIBS@ -lm
 

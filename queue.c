@@ -1,3 +1,6 @@
+/* ------------------------------------------------------------------------- */
+/* (C) 1996-2000 Orion Hodson.                                               */
+
 #include <errno.h>
 #include <stdlib.h>
 
@@ -22,7 +25,7 @@ queue_create(int (*compar)(char*,char*), int coff)
     queue_t *q= (queue_t*)calloc(1, sizeof(queue_t));
     q->sentinel.next = q->sentinel.prev = &q->sentinel;
     q->compar        = compar;
-    q->coff   = coff;
+    q->coff          = coff;
     q->nelem         = 0;
     return q;
 }
@@ -118,6 +121,7 @@ queue_get(queue_t *q, int n, int detach)
 		detach_node(q, e);
 	    break;
 	}
+	e = e->next;
     }
   
     return data;

@@ -1,3 +1,6 @@
+/* ------------------------------------------------------------------------- */
+/* (C) 1996-2000 Orion Hodson.                                               */
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -34,8 +37,8 @@
 #define FALSE 0
 #endif
 
-static mode = REFLECTOR;
-static ui_update_needed = FALSE;
+static int mode = REFLECTOR;
+static int ui_update_needed = FALSE;
 
 void usage()
 {
@@ -135,7 +138,7 @@ void
 init_control_sock(int *cfd, short cport) 
 {
     if (init_socket(cfd, cport, IPPROTO_TCP) == FALSE) {
-	fprintf(stderr, "init_control_sock failed.\n");
+	fprintf(stderr, "init_control_sock failed (port %d).\n", cport);
 	exit(-1);
     }
 
@@ -177,7 +180,7 @@ char *tokens[] = {
 int 
 token2id(char *token, int *num)
 {
-    int i=0;
+    unsigned int i=0;
 
     if (token != NULL) {
 	while(i < NTOKENS) {
@@ -353,7 +356,6 @@ process_control_cmds(int control_fd,
     struct sockaddr incoming;
     int  len, s, i, nconn, ready;
     int *new_sock;
-    char buf[80];
     fd_set strm_set;
     struct timeval notime;
 
@@ -411,10 +413,10 @@ init_reflect_sockets(struct queue_s *channels)
     channel_t *cp;
     int i,n;
     n = queue_length(channels);
-    for(i=0;i<n;i++){
+    for(i = 0; i < n; i++){
 	cp = (channel_t*)queue_get(channels,i,Q_KEEP);
 	if (init_socket(&cp->s, cp->port, IPPROTO_UDP) == FALSE) {
-	    fprintf(stderr, "init_control_sock failed.\n");
+	    fprintf(stderr, "init_socket failed (port %d).\n", cp->port);
 	    exit(-1);
 	}
     }
@@ -576,7 +578,7 @@ queue_pkt(channel_t *cp, struct queue_s* pkts) {
 void
 read_pkts(struct queue_s* channels,  struct queue_s *pkts)
 {
-    channel_t *cp;
+    channel_t *cp = NULL;
     fd_set m,f;
     int i, n, sel;
     struct timeval to;
@@ -584,17 +586,22 @@ read_pkts(struct queue_s* channels,  struct queue_s *pkts)
     to.tv_usec = 1000;
 
     n = queue_length(channels);
+    if (n <= 0) {
+	fprintf(stderr, "Eek! No channels\n"); /* Should never happen */
+	return;
+    }
+
     FD_ZERO(&m);
-    for(i=0;i<n;i++) {
+    for(i = 0; i < n; i++) {
 	cp = (channel_t*)queue_get(channels, i, Q_KEEP);
 	FD_SET(cp->s,&m);
     }
     memcpy(&f,&m,sizeof(fd_set));
-    while((sel = select(cp->s+1,&f,(fd_set*)0,(fd_set*)0, &to)) > 0) {
+    while((sel = select(cp->s+1, &f, (fd_set*)0, (fd_set*)0, &to)) > 0) {
 	for(i = 0; i < n; i++) {
 	    cp = (channel_t*)queue_get(channels, i, Q_KEEP);
 	    if (FD_ISSET(cp->s,&f)) {
-		queue_pkt(cp,pkts);
+		queue_pkt(cp, pkts);
 	    }
 	}
 	memcpy(&f, &m, sizeof(fd_set));
