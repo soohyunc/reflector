@@ -32,7 +32,7 @@ proc load_presets {name} {
     set cnt 0
     while {![eof $f]} {
 	gets $f l
-	if {[string first "#" $f]==-1} { 
+	if {[string first "#" $l ] < 0} { 
 	    # comment string in presets file is #
 	    if {[scan $l "%f %d %d %f" loss_rate($cnt) min_delay($cnt) max_delay($cnt) dup_pr($cnt)]!=-1} {
 		incr cnt

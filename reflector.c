@@ -162,8 +162,10 @@ char *tokens[] = {
 #define ID_MIN_DELAY 5
         "max_delay",
 #define ID_MAX_DELAY 6
+        "dup",
+#define ID_DUP  7
 };
-#define NTOKENS 7
+#define NTOKENS (sizeof(tokens)/sizeof(char*))
 
 int 
 token2id(char *token, int *num)
@@ -191,7 +193,7 @@ process_cmd(int sock_fd, struct queue_s* channels)
         channel_t *chan;
         int  nbytes, i, id, cmd_id, param_id;
         unsigned short tgt_port;
-        float nloss;
+        float nloss, ndup;
         int   ndelay;
 
         ioctl(sock_fd, FIONREAD, &nbytes);
@@ -275,6 +277,9 @@ process_cmd(int sock_fd, struct queue_s* channels)
                                 case ID_MAX_DELAY:
                                         sock_printf(sock_fd, "%d\n", chan->max_delay);
                                         break;
+                                case ID_DUP:
+                                        sock_printf(sock_fd, "%.2f\n", chan->dup_pr * 100.f);
+                                        break;
                                 }  /* param_id */
                                 break;
                         case ID_SET:
@@ -315,6 +320,17 @@ process_cmd(int sock_fd, struct queue_s* channels)
                                         sock_printf(sock_fd, 
                                                     "reflector: invalid max delay\n");
                                         break;
+                                case ID_DUP:
+                                        ndup = strtod(value,NULL);
+                                        if (ndup>=0.0 && ndup <= 100.0f) {
+                                                chan->dup_pr = ndup / 100.0f;
+                                                sock_printf(sock_fd,"ok\n");
+                                                break;
+                                        }
+                                        sock_printf(sock_fd, 
+                                                    "reflector: invalid dup value\n");
+                                        break;
+
                                 }  /* param_id */
                         } /* cmd_id */
                 } /* id */
