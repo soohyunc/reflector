@@ -11,6 +11,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -416,6 +417,34 @@ init_reflect_sockets(struct queue_s *channels)
         }
 }
 
+int
+add_multicast(int fd, unsigned int addr)
+{
+        char loop       = 0, ttl = 16; /* no loopback */
+        struct ip_mreq imr;
+        
+        imr.imr_multiaddr.s_addr = addr;
+        imr.imr_interface.s_addr = INADDR_ANY;
+        
+        if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *) &imr, sizeof(struct ip_mreq)) != 0) {
+                perror("setsockopt IP_ADD_MEMBERSHIP");
+                return FALSE;
+        }
+
+        if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop)) != 0) {
+                perror("setsockopt IP_MULTICAST_LOOP");
+                return FALSE;
+        }
+
+
+        if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &ttl, sizeof(ttl)) != 0) {
+                perror("setsockopt IP_MULTICAST_TTL");
+                return FALSE;
+        }
+
+        return TRUE;
+}
+
 void
 add_hosts(struct queue_s *channels, char *hosts)
 {
@@ -436,6 +465,11 @@ add_hosts(struct queue_s *channels, char *hosts)
                                 cp = (channel_t*)get_item_no(channels,i,Q_KEEP);
                                 addr = (unsigned int*)malloc(sizeof(unsigned int));
                                 memcpy(addr, he->h_addr_list[0], 4);
+                                
+                                if (IN_MULTICAST(ntohl(*addr))) {
+                                        add_multicast(cp->s, *addr);
+                                }
+
                                 add_to_queue(cp->hosts, (char*)addr);
                         }
                         printf("Added host %s\n", host);
