@@ -27,14 +27,14 @@ proc set_params {lr min max dup_pr} {
 
 # loads presets from file <name>
 proc load_presets {name} {
-    global npresets loss_rate min_delay max_delay
+    global npresets loss_rate min_delay max_delay dup_pr
     set f [open $name r]
     set cnt 0
     while {![eof $f]} {
 	gets $f l
 	if {[string first "#" $f]==-1} { 
 	    # comment string in presets file is #
-	    if {[scan $l "%f %d %d %d" loss_rate($cnt) min_delay($cnt) max_delay($cnt) dup_pr($cnt)]!=-1} {
+	    if {[scan $l "%f %d %d %f" loss_rate($cnt) min_delay($cnt) max_delay($cnt) dup_pr($cnt)]!=-1} {
 		incr cnt
 	    } else {
 		puts "warning preset line not recognized:\n $l"
@@ -94,14 +94,22 @@ pack .ms -side left -fill x -expand 0
 ###############################################################################
 # preset buttons
 
-load_presets presets
-frame .ms.presets
-pack .ms.presets -side left 
-set i 0
-while {$i<$npresets} {
-    button .ms.presets.b$i -text "Preset $i" -command "set_params $loss_rate($i) $min_delay($i) $max_delay($i)"
-    pack .ms.presets.b$i -side top -fill x -expand 1
-    incr i
+catch {
+    load_presets presets
+    frame .ms.presets
+    pack .ms.presets -side left 
+
+    set i 0
+    while {$i<$npresets} {
+	button .ms.presets.b$i -text "Preset $i" -command "set_params $loss_rate($i) $min_delay($i) $max_delay($i) dup_pr($i)"
+	pack .ms.presets.b$i -side top -fill x -expand 1
+	incr i
+    }
+    set dummy ""
+} load_error
+
+if {$load_error != ""} {
+    puts "Load settings: $load_error"
 }
 
 frame .ms.settings
