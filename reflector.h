@@ -7,17 +7,17 @@
 #define MAX_PKT_SZ 1500
 
 typedef struct s_channel {
-  int     port;      /* there is some redundancy between host_t here */
-  struct queue_s *hosts;
-  int     s;         /* socket */
-  float   loss;      /* the loss to be induced      */
-  int     min_delay; /* the minimum delay we induce */
-  int     max_delay; /* and the max delay...        */
-  float   dup_pr;    /* the probability of pkt duplication */
-  int recv;          /* number pkts received        */
-  int forw;          /* number forwarded            */
-  int drop;          /* number dropped              */
-  struct refl_stat_s *err_dist;
+    int     port;      /* there is some redundancy between host_t here */
+    struct queue_s *hosts;
+    int     s;         /* socket */
+    float   loss;      /* the loss to be induced      */
+    int     min_delay; /* the minimum delay we induce */
+    int     max_delay; /* and the max delay...        */
+    float   dup_pr;    /* the probability of pkt duplication */
+    int     recv;      /* number pkts received        */
+    int     forw;      /* number forwarded            */
+    int     drop;      /* number dropped              */
+    struct refl_stat_s *err_dist;
 } channel_t;
 
 typedef struct s_pkt {

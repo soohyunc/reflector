@@ -13,7 +13,7 @@ typedef struct refl_stat_s {
 #define max(a,b)        (a > b ? a : b)
 
 refl_stat_t *
-new_refl_stat()
+stats_create()
 {
         refl_stat_t *r = (refl_stat_t*) malloc (sizeof(refl_stat_t));
         memset(r->bin, 0, sizeof(unsigned int) * MAX_BINS);
@@ -21,14 +21,14 @@ new_refl_stat()
 }
 
 void
-add_item_to_refl_stat(refl_stat_t *r, int err)
+stats_add(refl_stat_t *r, int err)
 {
         int idx = min(DELAYTOBIN(err), MAX_BINS-1);
         r->bin[idx]++;
 }
 
 void
-dmp_refl_stat(refl_stat_t *r)
+stats_dump(refl_stat_t *r)
 {
         int i;
         for(i = 0; i < MAX_BINS; i++) 
@@ -37,7 +37,7 @@ dmp_refl_stat(refl_stat_t *r)
 }
 
 void
-free_refl_stat(refl_stat_t *r)
+stats_destroy(refl_stat_t *r)
 {
         free(r);
 }

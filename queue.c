@@ -1,167 +1,132 @@
 #include <errno.h>
 #include <stdlib.h>
+
 #include "queue.h"
 
 typedef struct node_s {
-  struct node_s *next;
-  struct node_s *prev;
-  char *data;
+    struct node_s *next;
+    struct node_s *prev;
+    char *data;
 } node_t;
 
 typedef struct queue_s {
-  int nelem;
-  struct node_s *head;
-  struct node_s *tail;
-  int idx_var_off;
-  int (*compar)(char*,char*);
+    struct node_s sentinel;    
+    int (*compar)(char*,char*); /* comparison function */
+    int coff;                   /* byte offset of data passed to comp. fn */
+    int nelem;
 } queue_t;
 
-queue_t 
-*create_queue(int (*compar)(char*,char*), int idx_var_off)
+struct queue_s *
+queue_create(int (*compar)(char*,char*), int coff)
 {
-  queue_t *q= (queue_t*)calloc(1,sizeof(queue_t));
-  q->compar = compar;
-  q->idx_var_off = idx_var_off;
-  return q;
+    queue_t *q= (queue_t*)calloc(1, sizeof(queue_t));
+    q->sentinel.next = q->sentinel.prev = &q->sentinel;
+    q->compar        = compar;
+    q->coff   = coff;
+    q->nelem         = 0;
+    return q;
 }
 
 int
-add_to_queue(queue_t *q, char *data) {
-  node_t *n,*e;
-  
-  q->nelem++;
-  
-  n       = (node_t*)calloc(1,sizeof(node_t));
-  n->data = data;
+queue_insert(queue_t *q, char *data) {
+    node_t *n, *e, *s;
+    
+    n = (node_t*)calloc(1, sizeof(node_t));
+    if (!n) {
+	return 0;
+    }
+    n->data = data;
 
-  if (!q->head) {
-    q->head = q->tail = n;
-    return 1;
-  }
-  e = q->head;
-  
-  while(e && (q->compar(e->data+q->idx_var_off,n->data+q->idx_var_off))<0) {
-    e = e->next;
-  }
-  if (e && e!=q->head) {
+    s = &q->sentinel; 
+    e = s->next;
+    
+    while(e != s) {
+	if (q->compar(e->data + q->coff, n->data + q->coff) < 0)
+	    break;
+	e = e->next;
+    }
+
     n->next = e;
     n->prev = e->prev;
     e->prev->next = n;
     e->prev = n;
-  } else if (e==q->head) {
-    n->next = q->head;
-    q->head->prev = n;
-    q->head = n;
-  } else if (!e){
-    n->prev = q->tail;
-    q->tail->next = n;
-    q->tail = n;
-  }
-  return 1;
+
+    q->nelem++;
+
+    return 1;
 }
 
 static inline void
 detach_node(queue_t *q, node_t *n)
 {
-  q->nelem--;
-  if (n == q->head && n == q->tail) {
-    q->head = q->tail = 0;
-  } else if (n == q->head) {
-    q->head       = q->head->next;
-    q->head->prev = 0;
-  } else if (n == q->tail) {
-    q->tail       = q->tail->prev;
-    q->tail->next = 0;
-  } else {
-    n->prev->next = n->next;
     n->next->prev = n->prev;
-  }
-  free(n);
+    n->prev->next = n->next;
+    q->nelem--;
+    free(n);
 }
 
-char*
-get_matching(queue_t *q,char *value, int detach)
+static char*
+queue_find(queue_t *q,char *value, int detach, int cmp_val)
 {
-  node_t *n;
-  char* found = 0;
-  int r;
-  n = q->head;
-  while(n && (r=(q->compar(n->data+q->idx_var_off,value)))<=0) {
-    if (r==0) {
-      found = n->data;
-      break;
+    node_t *e, *s;
+    char   *data = 0;
+
+    s = &q->sentinel;
+    e = s->next;
+    while (e != s) {
+	if (q->compar(e->data + q->coff, value) == cmp_val) {
+	    data = e->data;
+	    if (detach)       
+		detach_node(q, e);
+	    break;
+	}
+	e = e->next;
     }
-    n = n->next;
-  }
-  if (found && detach) 
-    detach_node(q,n);
+  
+    return data;
+}
 
-  return found;
+char *
+queue_get_eq(queue_t *q, char *value, int detach) {
+    return queue_find(q, value, detach, Q_CMP_EQ);
+}
+
+char *
+queue_get_lt(queue_t *q, char *value, int detach) {
+    return queue_find(q, value, detach, Q_CMP_LT);
+}
+
+char *
+queue_get_gt(queue_t *q, char *value, int detach) {
+    return queue_find(q, value, detach, Q_CMP_GT);
 }
 
 char*
-get_less_than(queue_t *q,char *value, int detach)
+queue_get(queue_t *q, int n, int detach) 
 {
-  node_t *n;
-  char* found = 0;
-  int r;
-  n = q->head;
+    node_t *e, *s;
+    char   *data = 0;
 
-  while(n) {  
-          if (q->compar(n->data+q->idx_var_off,value)<0) {
-                  found = n->data;
-                  break;
-          }
-          n = n->next;
-  }
+    s = &q->sentinel;
+    e = s->next;
 
-  if (found && detach) 
-    detach_node(q,n);
-  return found;
-}
-
-char*
-get_greater_than(queue_t *q,char *value, int detach)
-{
-  node_t *n;
-  char* found = 0;
-
-  n = q->head;
-  while(n) {
-    if (q->compar(n->data+q->idx_var_off,value)>0) {
-      found = n->data;
-      break;
+    while (e != s) {
+	n--;
+	if (n < 0) {
+	    data = e->data;
+	    if (detach)
+		detach_node(q, e);
+	    break;
+	}
     }
-    n = n->next;
-  }
   
-  if (found && detach) 
-    detach_node(q,n);
-
-  return found;
-}
-
-char*
-get_item_no(queue_t *q,int n, int detach) 
-{
-  node_t *np;
-  char *found=0;
-  int i=0;
-  
-  if (n>=q->nelem) return (char*)0;
-  np = q->head;
-  while(i++<n)
-    np=np->next;
-  found = np->data;
-  if (detach) detach_node(q,np);
-
-  return found;
+    return data;
 }
   
 inline int
-queue_len(queue_t *q)
+queue_length(queue_t *q)
 {
-  return q->nelem;
+    return q->nelem;
 }
 
 

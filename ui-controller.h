@@ -2,8 +2,7 @@
 #define __UI_CONTROLLER__
 #include "queue.h"
 
-int init_ui();
-int channels_to_ui(struct queue_s *c);
-int process_ui();
+int ui_init();
+int ui_process();
 
 #endif

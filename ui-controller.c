@@ -38,10 +38,10 @@ get_ports(ClientData clientData,
     int i,n;
 
     memset(msg,0,255);
-    n = queue_len(c);
+    n = queue_length(c);
     Tcl_SetResult(interp,NULL,TCL_STATIC);
     for(i=0;i<n;i++) {
-        chan = (channel_t*)get_item_no(c,i,Q_KEEP);
+        chan = (channel_t*)queue_get(c,i,Q_KEEP);
         sprintf(msg,"%d",chan->port);
         Tcl_AppendElement(interp,msg);
     }
@@ -60,7 +60,7 @@ query_engine(ClientData clientData,
 
     assert(argc>0);
     port = atoi(argv[argc-1]);
-    chan = (channel_t*)get_matching(c,(char*)&port,Q_KEEP);
+    chan = (channel_t*)queue_get_eq(c,(char*)&port,Q_KEEP);
 
     sprintf(var,"%d",chan->port);
     Tcl_SetVar2(interp,"c","port", var, TCL_GLOBAL_ONLY);
@@ -120,7 +120,7 @@ update_engine(ClientData clientData,
     }
 
     port = atoi(c_port);
-    if (!(chan=(channel_t*)get_matching(c,(char*)&port,Q_KEEP))) {
+    if (!(chan=(channel_t*)queue_get_eq(c,(char*)&port,Q_KEEP))) {
         sprintf(var,"Could not find port %d",port);
         Tcl_SetResult(interp, var, TCL_STATIC);
         return TCL_ERROR;
@@ -154,7 +154,7 @@ update_engine(ClientData clientData,
 /*****************************************************************************/
 /* ui admin functions                                                        */
 int
-init_ui()
+ui_init()
 {
     interp = Tcl_CreateInterp();
  
@@ -185,15 +185,8 @@ init_ui()
     return 1;
 }
 
-int 
-channels_to_ui(struct queue_s *q)
-{
-    c = q;
-    return queue_len(c);
-}
-
 int
-process_ui()
+ui_process()
 {
     while(Tcl_DoOneEvent(TCL_ALL_EVENTS|TCL_DONT_WAIT) != 0) {}
     return (!exit_now);
