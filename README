@@ -1,7 +1,7 @@
 User-Level Packet Reflector
 
-To make
--------
+Installation
+------------
 
 To build this program type:
 	./configure
