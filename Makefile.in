@@ -1,7 +1,7 @@
 CC = @CC@
-CFLAGS = -ggdb
-INCLUDE = @V_INCLUDE_TCL@ @V_INCLUDE_TK@ @V_INCLUDE_X11@
-LIB = @LIBS@ @V_LIB_TK@ @V_LIB_TCL@ @V_LIB_X11@ -lm
+CFLAGS = @CFLAGS@ @X_CFLAGS@
+INCLUDE = @TCL_INC@ @TK_INC@ 
+LIB = @X_PRE_LIBS@ @LIBS@ @TK_LIB@ @TCL_LIB@ @X_LIBS@ -lX11 -lXext @X_EXTRA_LIBS@ -lm
 
 reflector: reflector.o ui.o queue.o ui-controller.o stats.o
 	$(CC) -o $@ reflector.o ui.o queue.o ui-controller.o stats.o $(LIB) 

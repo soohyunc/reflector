@@ -11,236 +11,193 @@ AC_CHECK_LIB(nsl,    main)
 AC_CHECK_LIB(dl,    main)
 AC_SUBST(LIBS)
 
-xlibdirs="/usr/unsupported/lib \
-	/usr/X11R6/lib \
-        /usr/local/lib \
-        /usr/X386/lib \
-        /usr/lib/X11R6 \
-        /usr/X11R5/lib \
-        /usr/lib/X11R5 \
-        /usr/openwin/lib \
-        /usr/X11/lib \
-        /import/X11R4/usr/lib"
-xincdirs="/usr/unsupported/include \
-	/usr/X11R6/include \
-        /usr/local/include \
-        /usr/X386/include \
-        /usr/include/X11R6 \
-        /usr/X11R5/include \
-        /usr/include/X11R5 \
-        /usr/openwin/include \
-        /usr/X11/include \
-        /usr/lpp/X11/include \
-        /import/X11R4/include"
+# X 
+#------------------------------------------------------------------------------
+# Use autoconf inbuilt X location.  Works v. nicely.  Substitution of X vars
+# comes after broken X11 header check and attempted fix.
+#------------------------------------------------------------------------------
+AC_PATH_XTRA
 
+#------------------------------------------------------------------------------
+# Check if X headers are broken.  GCC 2.95 and up reject headers that don't
+# have omit types, X11 headers have implicit int declarations on some systems
+# (e.g. Solaris).
+#------------------------------------------------------------------------------
+AC_CACHE_CHECK(whether X11 headers are broken, x11_cv_broken_headers, [
+	SAVED_CFLAGS=$CFLAGS
+	CFLAGS="$X_CFLAGS $CFLAGS"
+	AC_TRY_COMPILE([#include <X11/Xlib.h>
+	#include <X11/Xutil.h>],
+	return 0,
+	x11_cv_broken_headers=no,
+	x11_cv_broken_headers=yes)
+	CFLAGS=$SAVED_CFLAGS
+]);
 
-echo "checking for X11 header files"
-if test "$x_includes" = NONE ; then
-        AC_TEST_CPP([#include <X11/Intrinsic.h>],x_includes="",x_includes=NONE)
-        if test "$x_includes" = NONE ; then
-                for i in $xincdirs ; do
-                        if test -r $i/X11/Intrinsic.h; then
-                                x_includes=$i
-                                break
-                        fi
-                done
-                if test "$x_includes" = NONE ; then
-                        echo "can't find X includes"
-                        exit 1
-                fi
-        fi
-fi
-if test -n "$x_includes" ; then 
-        V_INCLUDE_X11=-I$x_includes
-        AC_SUBST(V_INCLUDE_X11)
-fi
-
-echo "checking for X11 library archive"
-if test "$x_libraries" = NONE ; then
-        AC_CHECK_LIB(X11, main, x_libraries="", x_libraries=NONE)
-        if test "$x_libraries" = NONE ; then
-                for i in $xlibdirs ; do
-                        if test -r $i/libX11.a; then
-                                x_libraries=$i
-                                break
-                        fi
-                done
-                if test "$x_libraries" = NONE ; then
-                        echo "can't find X library"
-                        exit 1
-                fi
-        fi
-fi
-
-echo "checking for libXext.a"
-if test -f $x_libraries/libXext.a ; then
-       x_ext=$x_libraries
-else
-       AC_CHECK_LIB(Xext, main, x_ext="", x_ext=NONE, -lX11)
-       if test "$x_ext" = NONE ; then
-                for i in $xlibdirs ; do
-                        if test -r $i/libXext.a; then
-                                x_ext=$i
-                                break
-                        fi
-                done
-                if test "$x_ext" = NONE ; then
-                        echo "warning: compiling without -lXext"
-                fi
-        fi
-fi
-V_LIB_X11=-lX11
-if test -n "$x_libraries" ; then
-        V_LIB_X11="-L$x_libraries $V_LIB_X11"
-fi
-if test "$x_ext" != NONE ; then
-        V_LIB_X11="-lXext $V_LIB_X11"
-        if test -n "$x_ext" ; then
-                V_LIB_X11="-L$x_ext $V_LIB_X11"
-        fi
-fi
-
-AC_SUBST(V_LIB_X11)
-
-AC_ARG_WITH(tcl,--with-tcl=path specify a pathname for tcl, d=$withval,d="")
-if test "$d" != "" ; then 
-        if test ! -d $d ; then 
-                echo "'$d' is not a directory"
-                exit 1
-        fi
-        V_INCLUDE_TCL=-I$d/include
-        if test ! -r $d/include/tcl.h ; then
-                echo "can't find tcl.h in $d/include"
-                exit 1
-        fi
-	places="$d/lib/libtcl8.0.so \
-		$d/lib/libtcl8.0.a \
-                $d/lib/libtcl80.so \	
-                $d/lib/libtcl80.a"
-	V_LIB_TCL=FAIL
-        for dir in $places; do
-                if test -r $dir ; then
-                        V_LIB_TCL=$dir
-                        break
-                fi
-        done
-	if test "$V_LIB_TCL" = FAIL; then
-		echo "cannot find libtcl in: $places"
-		exit 1
-	fi
-else
-	AC_TEST_CPP([#include <tcl.h>], V_INCLUDE_TCL="", V_INCLUDE_TCL=FAIL)
-	if test "$V_INCLUDE_TCL" = FAIL; then
-		echo "checking for tcl.h"
-		places="$PWD/../tcl8.0 \
-			$PWD/../tcl80  \
-			/usr/local/include/tcl8.0  \
-			/usr/local/include/tcl80"
-		for dir in $places; do
-                        if test -r $dir/tcl.h ; then
-                                V_INCLUDE_TCL=-I$dir
-                                break
-                        fi
-                done
-                if test "$V_INCLUDE_TCL" = FAIL; then
-                        echo "can't find tcl.h"
-                        exit 1
-                fi
-        fi
-	V_LIB_TCL="FAIL"
-	if test "$V_LIB_TCL" = FAIL; then
-		echo "checking for libtcl"
-		places="/usr/local/lib"
-		for dir in $places; do
-			if test -r $dir/libtcl8.0.so -o -r $dir/libtcl8.0.a; then
-				V_LIB_TCL="-L$dir -ltcl8.0"
-				break;
-			elif test -r $dir/libtcl80.so -o -r $dir/libtcl80.a; then
-				V_LIB_TCL="-L$dir -ltcl80"
-				break;
-			fi
-		done
-		if test "$V_LIB_TCL" = FAIL; then
-			echo "can't find tcl library"
-                        exit 1
-		fi
+#------------------------------------------------------------------------------
+# If X headers look broken, check if we can use -istdinc.  If so replace 
+# -IXDIR with -istdincXDIR to suppress warnings.  NB it is possible to use
+# -fpermissive, but not in conjunction with -Werror since warnings are still
+# generated.  Could pull local headers through:
+#			 's/^\(extern\) \([[A-Za-z0-9]]*($\)/\1 int \2/' 
+#------------------------------------------------------------------------------
+if test $x11_cv_broken_headers = yes -a $GCC = "yes" ; then
+	SAVED_X_CFLAGS=X_CFLAGS
+	X_CFLAGS=`echo $X_CFLAGS | sed 's%-I%-istdinc%'`
+	AC_CACHE_CHECK(whether -istdinc fixes X11 headers, x11_cv_gcc_istdinc_works, [
+		SAVED_CFLAGS=$CFLAGS
+		CFLAGS="$X_CFLAGS $CFLAGS"
+		AC_TRY_COMPILE([#include <X11/Xlib.h>
+		#include <X11/Xutil.h>],
+		return 0,
+		x11_cv_gcc_istdinc_works=yes,
+		x11_cv_gcc_istdinc_works=no)
+		CFLAGS=$SAVED_CFLAGS
+	])
+	if test $x11_cv_gcc_istdinc_works = no ; then
+		X_CFLAGS=$SAVED_X_CFLAGS
 	fi
 fi
 
-AC_ARG_WITH(tk,--with-tk=path specify a pathname for tk, d=$withval,d="")
-if test "$d" != "" ; then 
-        if test ! -d $d ; then 
-                echo "'$d' is not a directory"
-                exit 1
-        fi
-        V_INCLUDE_TK=-I$d/include
-        if test ! -r $d/include/tk.h ; then
-                echo "can't find tk.h in $d/include"
-                exit 1
-        fi
-	places="$d/lib/libtk8.0.so \
-		$d/lib/libtk8.0.a \
-                $d/lib/libtk80.so \	
-                $d/lib/libtk80.a"
-	V_LIB_TK=FAIL
-        for dir in $places; do
-                if test -r $dir ; then
-                        V_LIB_TK=$dir
-                        break
-                fi
-        done
-	if test "$V_LIB_TK" = FAIL; then
-		echo "cannot find libtk in: $places"
-		exit 1
-	fi
-else
-	AC_TEST_CPP([#include <tk.h>], V_INCLUDE_TK="", V_INCLUDE_TK=FAIL)
-	if test "$V_INCLUDE_TK" = FAIL; then
-		echo "checking for tk.h"
-		places="$PWD/../tk8.0 \
-			$PWD/../tk80  \
-			/usr/local/include/tk8.0  \
-			/usr/local/include/tk80"
-		for dir in $places; do
-                        if test -r $dir/tk.h ; then
-                                V_INCLUDE_TK=-I$dir
-                                break
-                        fi
-                done
-                if test "$V_INCLUDE_TK" = FAIL; then
-                        echo "can't find tk.h"
-                        exit 1
-                fi
-        fi
-	AC_CHECK_LIB(tk, main, V_LIB_TK="-ltk8.0", V_LIB_TK="FAIL")
-	if test "$V_LIB_TK" = FAIL; then
-		echo "checking for libtk"
-		places="/usr/local/lib"
-		for dir in $places; do
-			if test -r $dir/libtk8.0.so -o -r $dir/libtk8.0.a; then
-				V_LIB_TK="-L$dir -ltk8.0"
-				break;
-			fi
-			if test -r $dir/libtk80.so -o -r $dir/libtk80.a; then
-				V_LIB_TK="-L$dir -ltk80"
-				break;
-			fi
-		done
-		if test "$V_LIB_TK" = FAIL; then
-			echo "can't find tk library"
-                        exit 1
-		fi
+AC_SUBST(X_CFLAGS)
+AC_SUBST(X_LIBS)
+AC_SUBST(X_EXTRA_LIBS)
+AC_SUBST(X_PRE_LIBS)
 
+# TCL/TK 
+#------------------------------------------------------------------------------
+# We could be dealing with a source installation or a full installation.
+# Expect a source installation to have headers in TCL8_HOME/generic and libs in
+# TCL8_HOME/unix.  A full installation should have headers in 
+# INSTDIR/include/tcl8.0, or INSTDIR/include, and have libraries be in 
+# INSTDIR/lib.
+#------------------------------------------------------------------------------
+PARENT=`echo $PWD | sed -e 's%/[[^/]]*$%%'`
+TCL_INC=${PARENT}/tcl-8.0
+TCL_LIB=${PARENT}/tcl-8.0
+
+AC_ARG_WITH(tcl,           
+	[  --with-tcl=DIR          specify location of Tcl installation],
+	[TCL_INC=$withval
+	 TCL_LIB=$withval])
+
+#-----------------------------------------------------------------------------
+# Depending on config expect tcl.h to be tcl source dir or include path
+#-----------------------------------------------------------------------------
+for i in $TCL_INC/generic $TCL_INC/include/tcl8.0 $TCL_INC/include $TCL_INC
+do
+	if test -d $i ; then
+		TCL_INC=$i
+		break
 	fi
+done
+
+AC_CHECK_HEADER(${TCL_INC}/tcl.h,
+	TCL_INC=-I${TCL_INC},
+	TCL_INC=no)
+
+if test "$TCL_INC" = no 
+then
+	echo "Could not find tcl.h.  One of the following halted progress:"
+	echo "   (a) Tcl is not installed."
+	echo "   (b) Tcl's location was mis-specified, or not specified (--with-tcl=DIR)."
+	echo "   (c) this script failed to see it (please inform rat-trap@cs.ucl.ac.uk)."
+	exit
 fi
-AC_SUBST(V_INCLUDE_TCL)
-AC_SUBST(V_LIB_TCL)
-AC_SUBST(V_INCLUDE_TK)
-AC_SUBST(V_LIB_TK)
-AC_SUBST(V_LIB_X11)
+
+#-----------------------------------------------------------------------------
+# Guess most probable tcl lib location
+#-----------------------------------------------------------------------------
+for i in $TCL_LIB/unix $TCL_LIB/lib $TCL_LIB
+do
+	if test -d $i ; then
+		TCL_LIB=$i
+		break
+	fi
+done
+
+SAVED_LIBS=$LIBS
+LIBS=""
+FOUND_TCL_LIB=no
+AC_SEARCH_LIBS(Tcl_Init, tcl8.0 tcl80, 
+	FOUND_TCL_LIB=yes,
+	, 
+	-L${TCL_LIB} ${SAVED_LIBS} -lm)
+TCL_LIB="-L${TCL_LIB} $LIBS"
+LIBS=$SAVED_LIBS
+
+if test $FOUND_TCL_LIB = no
+then
+	echo "Could not find Tcl library.  One of the following halted progess:"
+	echo "   (a) Tcl is not installed."
+	echo "   (b) Library is not built or not in expected location (--with-tcl=DIR)."
+	echo "   (c) this script failed to see it (please inform rat-trap@cs.ucl.ac.uk)."
+	exit
+fi
+
+TK_INC=${PARENT}/tk-8.0
+TK_LIB=${PARENT}/tk-8.0
+
+AC_ARG_WITH(tk,           
+	[  --with-tk=DIR           specify location of Tk installation],
+	[TK_INC=$withval
+	 TK_LIB=$withval])
+#-----------------------------------------------------------------------------
+# Depending on config expect tk.h to be tk source dir or include path
+# AC_CHECK_HEADER(S) are totally inadequate since it is necessary to
+# include tcl.h, Xlib.h, Xutil.h before tk.h.
+#-----------------------------------------------------------------------------
+FOUND_TK_INC=0
+for i in $TK_INC/generic $TK_INC/include/tk8.0 $TK_INC/include $TK_INC
+do
+	AC_MSG_CHECKING(for $i/tk.h)
+	if test -r $i/tk.h ; then
+		TK_INC=-I$i
+		FOUND_TK_INC=1
+		AC_MSG_RESULT(yes)
+		break
+	fi
+	AC_MSG_RESULT(no)
+done
+
+if test $FOUND_TK_INC = 0 ; then
+	echo "Could not find tk.h.  One of the following halted progress:"
+	echo "   (a) Tk is not installed."
+	echo "   (b) Tk's location was mis-specified, or not specified (--with-tk=DIR)."
+	echo "   (c) this script failed to see it (please inform rat-trap@cs.ucl.ac.uk)."
+	exit
+fi
+
+# Guess most probable tk lib location
+for i in $TK_LIB/unix $TK_LIB/lib $TK_LIB
+do
+	if test -d $i ; then
+		TK_LIB=$i
+		break
+	fi
+done
+
+SAVED_LIBS=$LIBS
+LIBS=""
+FOUND_TK_LIB=no
+AC_SEARCH_LIBS(Tk_Init, tk8.0 tk80,
+	FOUND_TK_LIB=yes,
+	,
+	-L${TK_LIB} ${TCL_LIB} $X_LIBS $X_PRE_LIBS  -lXext -lX11 $X_EXTRA_LIBS ${SAVED_LIBS} -lm)
+TK_LIB="-L${TK_LIB} $LIBS"
+LIBS=$SAVED_LIBS
+
+if test $FOUND_TK_LIB = no
+then
+	echo "Could not find Tk library.  One of the following halted progess:"
+	echo "   (a) Tk is not installed."
+	echo "   (b) Library is not built or not in expected location (--with-tk=DIR)."
+	echo "   (c) this script failed to see it (please inform rat-trap@cs.ucl.ac.uk)."
+	exit
+fi
+
+AC_SUBST(TCL_INC)
+AC_SUBST(TCL_LIB)
+AC_SUBST(TK_INC)
+AC_SUBST(TK_LIB)
 AC_OUTPUT(Makefile)
-
-
-
-
-
