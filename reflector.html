@@ -1,0 +1,154 @@
+<html>
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<LINK REL=STYLESHEET TYPE="text/css" HREF="http://www.cs.ucl.ac.uk/staff/O.Hodson/homepage.css">
+	<title> UDP Packet Reflector / Forwarder </title> 
+</head>
+
+<BODY>
+
+<h1> UDP Packet Reflector / Forwarder </h1>
+
+<h2> Introduction </h2>
+
+<p>This application operates in two modes:
+
+<ul> 
+
+<li><strong>packet reflector</strong> that sends UDP packets back
+to the host that sent them.
+
+<li><strong>packet forwarder</strong> that forwards packets between a
+number of unicast UDP sources acting as bridge when multicast is not
+available.
+
+</ul> 
+
+The reflector will also drop packets, duplicate packets, and add
+jitter on a per port basis.  The default method of setting parameters
+is through a tcl/tk user interface, but they can also be sent to the
+application via TCP so they can be set by TELNET or alternate
+interfaces.  This latter control method has been used in audio and
+video perception experiments.
+
+<p> This code came into existence to help for debugging of Mbone tools
+when multicast is not available and for running loopback tests with
+tunable jitter, delay, and duplication.
+
+<p> The program does not support packet forwarding or reception from
+multicast groups.
+
+<h2> Availability </h2>
+
+<p> The code is only available in source code form.  It comes with a
+configure script that works on Solaris and FreeBSD and should work on
+most UNIX variants with little modification.  Socrates Varakliotis has
+made modifications to make it run on Win32 though I may never get
+around to incorporating them.
+
+<p> You can download the <a href="reflector.tar.gz">UNIX source
+code</a>, <a href="win_refl2.zip">Win32 source code</a>, or you get
+the latest source by <a href="http://www-mice.cs.ucl.ac.uk/multimedia/software/cvsanon.html">anonymous cvs</a>.
+
+<p> <em> There is no copyright or licensing conditions on this code.
+It is free to all for whatever. </em>
+
+<h2> Command line arguments </h2>
+
+<pre>
+reflector [-f] [-n] [-c &#60;port&#62;] [-k &#60;known host1&#62;,&#60;known host2&#62;, ..] port1 port2
+</pre>
+
+<p>where:
+
+<br>-f selects packet forwarder (bridging) mode.  By default it acts as a reflector.
+
+<br>-n disables the user interface.
+
+<br>-c enables a control channel on port &#60;port&#62;.
+
+<br>-k creates a list of known hosts.  If packets are received from
+other hosts they are discarded.  By default the application expands
+the list of known hosts as they send packets.  The known hosts should
+be comma separated with no spaces.
+
+<br> The final arguments are a white space delimited list of ports.
+Note the parameters in the user interface are tunable on a per port
+basis. 
+
+<h2> Remote control commands </h2>
+
+There are three groups of commands: liveness testing (helo), parameter
+setting, and parameter retrieving.  
+
+<pre>helo</pre>
+
+<pre>port &#60;port&#62; set &#60;loss|min_delay|max_delay|dup&#62 &#60;value&#62;</pre>
+
+<pre>port &#60;port&#62; get &#60;loss|min_delay|max_delay|dup&#62 </pre>
+
+<h2> Examples </h2>
+
+Here are some simple examples using the UDP based audio conferencing
+program RAT.  In the below examples RAT is started with a single port
+argument but the reflector is started with two parts because RAT uses
+RTP and RTP uses two ports: one for media data and one for reporting.
+
+<h3> Packet reflector </h3>
+
+A user on fred wants to debug RAT by reflecting packets off of fred.
+
+<pre>
+barney% reflector 10000 10001
+
+fred% rat -allowloopback barney/10000
+
+</pre>
+
+
+<h3> Packet forwarder </h3>
+
+There are three users who want to have a unicast conference using
+machine barney as a bridge.  On each machine the arguments would be:
+
+<pre>
+
+barney% reflector -f -k fred,wilma,betty 10000 10001
+
+fred%  rat barney/10000
+
+wilma% rat barney/10000
+
+betty% rat barney/10000
+
+</pre>
+
+<h3> Remote Control </h3>
+
+A user on dibble wants to control the reflector on topcat which is
+being used to add delay and loss for conferencing between benny and
+goldie.  In this example TELNET is used, but it could be any
+application.
+
+<pre>
+topcat% reflector -f -n -k benny,goldie -c 12345 10000 10001
+benny%  rat topcat/10000
+goldie% rat topcat/10000
+
+dibble% telnet topcat 12345
+Trying topcat...
+Connected to topcat
+Escape character is '^]'.
+helo
+helo
+port 10000 set loss 5
+ok
+port 10000 get loss
+5.00
+</pre>
+
+</BODY>
+
+</html>
+
