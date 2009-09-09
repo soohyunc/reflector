@@ -354,7 +354,8 @@ process_control_cmds(int control_fd,
                      struct queue_s* channels)
 {
     struct sockaddr incoming;
-    int  len, s, i, nconn, ready;
+    int  s, i, nconn, ready;
+	socklen_t len;
     int *new_sock;
     fd_set strm_set;
     struct timeval notime;
@@ -507,7 +508,7 @@ add_if_unknown(channel_t *cp, struct sockaddr_in *from)
 void
 queue_pkt(channel_t *cp, struct queue_s* pkts) {
     struct sockaddr_in from;
-    int         fromlen;
+    socklen_t         fromlen;
     pkt_t      *p;
     double      dup_pr;
     
