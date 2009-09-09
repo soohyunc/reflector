@@ -5,6 +5,7 @@
 #include <tcl.h>
 #include <tk.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "queue.h"
 #include "reflector.h"
