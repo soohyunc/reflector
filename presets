@@ -1,0 +1,4 @@
+#format <loss rate (float)> <min delay ms (int)> <max delay ms (int)> <dup rate (float)>
+0 100 200  3
+5 100 500  6
+10 100 700 7

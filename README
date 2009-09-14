@@ -1,0 +1,37 @@
+User-Level Packet Reflector
+
+Installation
+------------
+
+To build this program type:
+	./configure
+	./make
+
+This will build the binary and leave it in the source directory. 
+
+Building assumes you have Tcl/Tk installed you may have to specify the
+location of the Tcl/Tk installations with:
+
+./configure --with-tcl=... --with-tk=...
+
+This configure script has only been fitted to solaris and freebsd.
+
+Sample Usage
+------------
+
+./reflector <port1> <port2> ...
+
+All packets that are received on the specified ports are returned to
+sender.  Through the graphical interface you can select the uniform
+loss rate, the minimum and maximum delay applied to each packet.  The
+resolution of the delay is usually 10ms.
+
+To test RAT for instance, on the machine you intend to reflect packets type:
+
+toffee% reflector 10000 10001
+
+and on the machine you want to run the audio tool type:
+
+fudge% rat -allow_loopback toffee/10000
+
+
