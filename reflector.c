@@ -47,7 +47,7 @@ void usage()
 	"port1 port2 ...\nwhere:\n\t -f causes packets to be forwarded " \
 	"rather than reflected.\n\t -n means no user interface.\n\t " \
 	"-c <port> accept control commands on the given port.\n";
-    printf(ustr);
+    printf("%s\n", ustr);
     exit(0);
 }
 
