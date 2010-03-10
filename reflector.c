@@ -747,13 +747,13 @@ main(int argc, char *argv[])
     i = queue_length(channels);
     while(i-- > 0) {
 	tc = (channel_t*)queue_get(channels, 0, Q_DETACH);
+	printf("\n>> min delay: %d\n>> max delay: %d\n", 
+			tc->min_delay, 
+			tc->max_delay);
 	printf("Stats for port %d:\nDropped %d / %d \nDelay Distn\n",
 	       tc->port,
 	       tc->drop,
 	       tc->forw);
-	printf("\tmin delay: %d\tmax delay: %d\n", 
-			tc->min_delay, 
-			tc->max_delay);
 	stats_dump(tc->err_dist);
 	stats_destroy(tc->err_dist);
 	free(tc);
