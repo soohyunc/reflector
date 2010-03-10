@@ -751,6 +751,9 @@ main(int argc, char *argv[])
 	       tc->port,
 	       tc->drop,
 	       tc->forw);
+	printf("\tmin delay: %d\tmax delay: %d\n", 
+			tc->min_delay, 
+			tc->max_delay);
 	stats_dump(tc->err_dist);
 	stats_destroy(tc->err_dist);
 	free(tc);
